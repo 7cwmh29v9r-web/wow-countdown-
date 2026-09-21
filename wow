@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>World of Warcraft: Forever — Odpočet & Plánovač</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #07090e;
+      --panel-bg: rgba(14, 18, 27, 0.85);
+      --panel-border: rgba(212, 163, 89, 0.3);
+      --gold-primary: #f3c262;
+      --gold-bright: #ffd885;
+      --gold-dark: #997327;
+      --text-main: #e2e8f0;
+      --text-muted: #94a3b8;
+      --alliance-blue: #0078ff;
+      --horde-red: #b30000;
+      --neutral-gold: #e5b800;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      background-image: radial-gradient(circle at 50% 20%, rgba(20, 30, 50, 0.6) 0%, rgba(7, 9, 14, 0.95) 70%),
+                        url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=2000&auto=format&fit=crop');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      padding: 2rem 1rem;
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 2rem; }
+    header { text-align: center; margin-bottom: 1rem; }
+    h1 { font-family: 'Cinzel', serif; font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 900; color: var(--gold-bright); text-shadow: 0 0 20px rgba(243, 194, 98, 0.4); }
+    .subtitle { color: var(--text-muted); font-size: 1.1rem; text-transform: uppercase; letter-spacing: 2px; }
+
+    .card { background: var(--panel-bg); backdrop-filter: blur(12px); border: 1px solid var(--panel-border); border-radius: 12px; padding: 1.5rem; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5); }
+    
+    .countdown-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; max-width: 700px; margin: 1.5rem auto 1rem; }
+    .time-block { background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(243, 194, 98, 0.2); border-radius: 8px; padding: 1rem; text-align: center; }
+    .time-num { font-family: 'Cinzel', serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; color: var(--gold-bright); }
+    .time-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; }
+
+    .btn-group { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; margin-top: 1rem; }
+    .btn { background: linear-gradient(180deg, #3a2b10 0%, #1a1205 100%); border: 1px solid var(--gold-primary); color: var(--gold-bright); font-family: 'Cinzel', serif; font-weight: 700; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.2s ease; }
+    .btn:hover { background: linear-gradient(180deg, #543f18 0%, #291d08 100%); border-color: var(--gold-bright); box-shadow: 0 0 12px rgba(243, 194, 98, 0.3); }
+
+    .players-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; }
+    .player-card { display: flex; flex-direction: column; gap: 1rem; border-top: 3px solid var(--gold-primary); }
+    .player-name { font-family: 'Cinzel', serif; font-size: 1.5rem; color: var(--gold-bright); border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 0.5rem; }
+
+    .character-box { background: rgba(0, 0, 0, 0.3); border-radius: 8px; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem; border: 1px solid rgba(255, 255, 255, 0.05); }
+    .char-header { font-size: 0.9rem; font-weight: 700; text-transform: uppercase; color: var(--gold-primary); letter-spacing: 1px; }
+
+    .select-group { display: flex; flex-direction: column; gap: 0.25rem; }
+    .select-group label { font-size: 0.75rem; color: var(--text-muted); }
+    select { background: rgba(10, 14, 22, 0.9); border: 1px solid var(--panel-border); color: var(--text-main); padding: 0.5rem; border-radius: 4px; font-family: inherit; font-size: 0.9rem; }
+
+    .schedule-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    .schedule-table th, .schedule-table td { padding: 0.75rem 1rem; text-align: center; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+    .schedule-table th { font-family: 'Cinzel', serif; color: var(--gold-primary); font-size: 0.9rem; }
+    .schedule-table td:first-child { text-align: left; font-weight: 600; }
+    .checkbox-custom { width: 22px; height: 22px; accent-color: var(--gold-primary); cursor: pointer; }
+
+    .share-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; background: rgba(243, 194, 98, 0.05); border: 1px dashed var(--gold-primary); }
+    .toast { position: fixed; bottom: 20px; right: 20px; background: var(--gold-bright); color: #000; padding: 0.75rem 1.5rem; border-radius: 6px; font-weight: bold; opacity: 0; transition: opacity 0.3s ease; pointer-events: none; }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>WORLD OF WARCRAFT: FOREVER</h1>
+      <div class="subtitle">Odpočet k vydání & Hráčský Plánovač</div>
+    </header>
+
+    <!-- COUNTDOWN CARD -->
+    <section class="card">
+      <h2 style="font-family:'Cinzel'; text-align:center; color: var(--gold-primary); font-size:1.2rem;">SPOUŠTĚNÍ HRY: 5. LISTOPADU 2026 (00:00:00)</h2>
+      <div class="countdown-grid">
+        <div class="time-block"><div class="time-num" id="dny">00</div><div class="time-label">Dní</div></div>
+        <div class="time-block"><div class="time-num" id="hodiny">00</div><div class="time-label">Hodin</div></div>
+        <div class="time-block"><div class="time-num" id="minuty">00</div><div class="time-label">Minut</div></div>
+        <div class="time-block"><div class="time-num" id="sekundy">00</div><div class="time-label">Sekund</div></div>
+      </div>
+      <div class="btn-group">
+        <a class="btn" href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=World+of+Warcraft:+Forever+Launch&dates=20261104T230000Z/20261105T040000Z&details=Release+WoW+Forever!" target="_blank">📅 Google Kalendář</a>
+        <button class="btn" onclick="downloadICS()">📥 Stáhnout .ICS Soubor</button>
+      </div>
+    </section>
+
+    <!-- SHARE BAR -->
+    <section class="card share-bar">
+      <div>
+        <strong style="color: var(--gold-bright);">Sdílení konfigurace</strong>
+        <p style="font-size:0.85rem; color: var(--text-muted);">Uložte volby postav a víkendů do odkazu a pošlete ho ostatním.</p>
+      </div>
+      <button class="btn" onclick="copyShareUrl()">🔗 Zkopírovat odkaz s vaším výběrem</button>
+    </section>
+
+    <!-- CHARACTERS SELECTION -->
+    <section class="card">
+      <h2 style="font-family:'Cinzel'; color: var(--gold-primary); margin-bottom: 1rem;">Výběr Postav (Main & Alt)</h2>
+      <div class="players-grid" id="playersContainer"></div>
+    </section>
+
+    <!-- SCHEDULE VOTING -->
+    <section class="card">
+      <h2 style="font-family:'Cinzel'; color: var(--gold-primary); margin-bottom: 0.5rem;">Listopadový Víkendový Termínovník 2026</h2>
+      <p style="font-size:0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Zaškrtněte víkendy, kdy máte čas na společné hraní po vydání hry.</p>
+      <div style="overflow-x: auto;">
+        <table class="schedule-table">
+          <thead>
+            <tr>
+              <th>Víkend</th>
+              <th>Martin</th>
+              <th>David</th>
+              <th>Jarda</th>
+            </tr>
+          </thead>
+          <tbody id="scheduleBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast">Odkaz zkopírován do schránky!</div>
+
+  <script>
+    // WoW Forever Races & Specific Class Limits
+    const raceClasses = {
+      "Human": ["Warrior", "Paladin", "Rogue", "Priest", "Mage", "Warlock", "Hunter"],
+      "Dwarf": ["Warrior", "Paladin", "Hunter", "Rogue", "Priest", "Shaman"],
+      "Night Elf": ["Warrior", "Hunter", "Rogue", "Priest", "Druid"],
+      "Gnome": ["Warrior", "Rogue", "Mage", "Warlock", "Priest"],
+      "Orc": ["Warrior", "Hunter", "Rogue", "Shaman", "Warlock", "Mage"],
+      "Undead": ["Warrior", "Rogue", "Priest", "Mage", "Warlock", "Paladin"],
+      "Tauren": ["Warrior", "Hunter", "Shaman", "Druid"],
+      "Troll": ["Warrior", "Hunter", "Rogue", "Shaman", "Mage", "Priest", "Warlock"],
+      "Skyborne": ["Warrior", "Hunter", "Rogue", "Druid", "Mage", "Shaman"]
+    };
+
+    const players = ["Martin", "David", "Jarda"];
+    const weekends = ["7. - 8. Listopadu 2026", "14. - 15. Listopadu 2026", "21. - 22. Listopadu 2026", "28. - 29. Listopadu 2026"];
+
+    let appState = { players: {}, schedule: {} };
+
+    // Initialize State
+    players.forEach(p => {
+      appState.players[p] = {
+        main: { race: "Human", class: "Paladin" },
+        alt: { race: "Orc", class: "Warrior" }
+      };
+    });
+    weekends.forEach((w, idx) => {
+      appState.schedule[idx] = { Martin: false, David: false, Jarda: false };
+    });
+
+    // Countdown Logic
+    const targetDate = new Date("2026-11-05T00:00:00").getTime();
+    function updateCountdown() {
+      const now = new Date().getTime();
+      const diff = targetDate - now;
+      if (diff > 0) {
+        document.getElementById("dny").innerText = Math.floor(diff / (1000 * 60 * 60 * 24)).toString().padStart(2, '0');
+        document.getElementById("hodiny").innerText = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0');
+        document.getElementById("minuty").innerText = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+        document.getElementById("sekundy").innerText = Math.floor((diff % (1000 * 60)) / 1000).toString().padStart(2, '0');
+      }
+    }
+    setInterval(updateCountdown, 1000);
+    updateCountdown();
+
+    // Render Players UI
+    function renderPlayers() {
+      const container = document.getElementById("playersContainer");
+      container.innerHTML = "";
+
+      players.forEach(p => {
+        const card = document.createElement("div");
+        card.className = "player-card card";
+        card.innerHTML = `<div class="player-name">${p}</div>`;
+
+        ["main", "alt"].forEach(type => {
+          const charData = appState.players[p][type];
+          const charBox = document.createElement("div");
+          charBox.className = "character-box";
+          
+          let raceOptions = Object.keys(raceClasses).map(r => `<option value="${r}" ${r === charData.race ? 'selected' : ''}>${r}</option>`).join('');
+          let availableClasses = raceClasses[charData.race] || [];
+          let classOptions = availableClasses.map(c => `<option value="${c}" ${c === charData.class ? 'selected' : ''}>${c}</option>`).join('');
+
+          charBox.innerHTML = `
+            <div class="char-header">${type.toUpperCase()} Postava</div>
+            <div class="select-group">
+              <label>Rasa:</label>
+              <select onchange="updateRace('${p}', '${type}', this.value)">${raceOptions}</select>
+            </div>
+            <div class="select-group">
+              <label>Povolání (Class):</label>
+              <select onchange="updateClass('${p}', '${type}', this.value)">${classOptions}</select>
+            </div>
+          `;
+          card.appendChild(charBox);
+        });
+
+        container.appendChild(card);
+      });
+    }
+
+    function updateRace(player, type, race) {
+      appState.players[player][type].race = race;
+      const validClasses = raceClasses[race];
+      if (!validClasses.includes(appState.players[player][type].class)) {
+        appState.players[player][type].class = validClasses[0];
+      }
+      renderPlayers();
+    }
+
+    function updateClass(player, type, cls) {
+      appState.players[player][type].class = cls;
+    }
+
+    // Render Schedule UI
+    function renderSchedule() {
+      const tbody = document.getElementById("scheduleBody");
+      tbody.innerHTML = "";
+
+      weekends.forEach((w, idx) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${w}</td>` + players.map(p => `
+          <td>
+            <input type="checkbox" class="checkbox-custom" 
+              ${appState.schedule[idx][p] ? 'checked' : ''} 
+              onchange="toggleSchedule(${idx}, '${p}', this.checked)">
+          </td>
+        `).join('');
+        tbody.appendChild(tr);
+      });
+    }
+
+    function toggleSchedule(wIdx, player, checked) {
+      appState.schedule[wIdx][player] = checked;
+    }
+
+    // URL Hash State Management
+    function copyShareUrl() {
+      const jsonStr = JSON.stringify(appState);
+      const encoded = btoa(encodeURIComponent(jsonStr));
+      const url = window.location.origin + window.location.pathname + "#state=" + encoded;
+      
+      navigator.clipboard.writeText(url).then(() => {
+        const toast = document.getElementById("toast");
+        toast.classList.add("show");
+        setTimeout(() => toast.classList.remove("show"), 2500);
+      });
+    }
+
+    function loadStateFromUrl() {
+      if (window.location.hash.startsWith("#state=")) {
+        try {
+          const encoded = window.location.hash.replace("#state=", "");
+          const jsonStr = decodeURIComponent(atob(encoded));
+          const loaded = JSON.parse(jsonStr);
+          if (loaded.players && loaded.schedule) {
+            appState = loaded;
+          }
+        } catch (e) {
+          console.error("Chyba při načítání stavu z URL", e);
+        }
+      }
+    }
+
+    function downloadICS() {
+      const icsData = `BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:World of Warcraft: Forever Launch\nDESCRIPTION:Spuštění hry WoW Forever!\nDTSTART:20261104T230000Z\nDTEND:20261105T040000Z\nEND:VEVENT\nEND:VCALENDAR`;
+      const blob = new Blob([icsData], { type: 'text/calendar' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'wow-forever-launch.ics';
+      a.click();
+    }
+
+    // Init
+    loadStateFromUrl();
+    renderPlayers();
+    renderSchedule();
+  </script>
+</body>
+</html>
