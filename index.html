@@ -135,7 +135,6 @@
   <div class="toast" id="toast">Odkaz zkopírován do schránky!</div>
 
   <script>
-    // WoW Forever Races & Specific Class Limits
     const raceClasses = {
       "Human": ["Warrior", "Paladin", "Rogue", "Priest", "Mage", "Warlock", "Hunter"],
       "Dwarf": ["Warrior", "Paladin", "Hunter", "Rogue", "Priest", "Shaman"],
@@ -153,7 +152,7 @@
 
     let appState = { players: {}, schedule: {} };
 
-    // Initialize Default State
+    // Výchozí stav
     players.forEach(p => {
       appState.players[p] = {
         main: { race: "Human", class: "Paladin" },
@@ -164,7 +163,7 @@
       appState.schedule[idx] = { Martin: false, David: false, Jarda: false };
     });
 
-    // Countdown Logic
+    // Odpočet
     const targetDate = new Date("2026-11-05T00:00:00").getTime();
     function updateCountdown() {
       const now = new Date().getTime();
@@ -179,7 +178,7 @@
     setInterval(updateCountdown, 1000);
     updateCountdown();
 
-    // Render Players UI
+    // Vykreslení hráčů
     function renderPlayers() {
       const container = document.getElementById("playersContainer");
       container.innerHTML = "";
@@ -222,16 +221,16 @@
       if (!validClasses.includes(appState.players[player][type].class)) {
         appState.players[player][type].class = validClasses[0];
       }
-      updateUrlHash();
+      saveStateToUrl();
       renderPlayers();
     }
 
     function updateClass(player, type, cls) {
       appState.players[player][type].class = cls;
-      updateUrlHash();
+      saveStateToUrl();
     }
 
-    // Render Schedule UI
+    // Vykreslení tabulky
     function renderSchedule() {
       const tbody = document.getElementById("scheduleBody");
       tbody.innerHTML = "";
@@ -252,33 +251,52 @@
     function toggleSchedule(wIdx, player, checked) {
       if (!appState.schedule[wIdx]) appState.schedule[wIdx] = {};
       appState.schedule[wIdx][player] = checked;
-      updateUrlHash();
+      saveStateToUrl();
     }
 
-    // Synchronizace stavu do URL Hash
-    function updateUrlHash() {
-      const jsonStr = JSON.stringify(appState);
-      const encoded = btoa(encodeURIComponent(jsonStr));
-      window.location.hash = "state=" + encoded;
+    // Okamžité uložení stavu přímo do adresního řádku
+    function saveStateToUrl() {
+      try {
+        const jsonStr = JSON.stringify(appState);
+        const encoded = btoa(encodeURIComponent(jsonStr));
+        const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + "#state=" + encoded;
+        window.history.replaceState(null, null, newUrl);
+      } catch (e) {
+        console.error("Chyba uložení do URL:", e);
+      }
     }
 
-    // URL Hash State Management
+    // Kopírování odkazu
     function copyShareUrl() {
-      updateUrlHash();
-      const currentUrl = window.location.href;
+      saveStateToUrl();
+      const shareUrl = window.location.href;
       
-      navigator.clipboard.writeText(currentUrl).then(() => {
-        const toast = document.getElementById("toast");
-        toast.classList.add("show");
-        setTimeout(() => toast.classList.remove("show"), 2500);
-      });
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(shareUrl).then(showToast);
+      } else {
+        // Záchrana pro starší prohlížeče
+        const textArea = document.createElement("textarea");
+        textArea.value = shareUrl;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+        showToast();
+      }
     }
 
+    function showToast() {
+      const toast = document.getElementById("toast");
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 2500);
+    }
+
+    // Načtení dat z URL
     function loadStateFromUrl() {
-      if (window.location.hash.includes("state=")) {
+      const hash = window.location.hash;
+      if (hash && hash.includes("state=")) {
         try {
-          const hashParams = new URLSearchParams(window.location.hash.substring(1));
-          const encoded = hashParams.get("state");
+          const encoded = hash.split("state=")[1];
           if (encoded) {
             const jsonStr = decodeURIComponent(atob(encoded));
             const loaded = JSON.parse(jsonStr);
@@ -287,7 +305,7 @@
             }
           }
         } catch (e) {
-          console.error("Chyba při načítání stavu z URL", e);
+          console.error("Chyba při načítání stavu z URL:", e);
         }
       }
     }
@@ -301,7 +319,7 @@
       a.click();
     }
 
-    // Init
+    // Inicializace
     loadStateFromUrl();
     renderPlayers();
     renderSchedule();
